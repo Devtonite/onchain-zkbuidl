@@ -1,26 +1,20 @@
-import { Add } from './Add';
-import { Field, Mina, PrivateKey, PublicKey, AccountUpdate } from 'o1js';
+import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
+import { Core } from './Core';
+import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool } from 'o1js';
 
-/*
- * This file specifies how to test the `Add` example smart contract. It is safe to delete this file and replace
- * with your own tests.
- *
- * See https://docs.minaprotocol.com/zkapps for more info.
- */
+let proofsEnabled = true;
 
-let proofsEnabled = false;
-
-describe('Add', () => {
+describe('Core', () => {
   let deployerAccount: PublicKey,
     deployerKey: PrivateKey,
     senderAccount: PublicKey,
     senderKey: PrivateKey,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
-    zkApp: Add;
+    zkApp: Core;
 
   beforeAll(async () => {
-    if (proofsEnabled) await Add.compile();
+    if (proofsEnabled) await Core.compile();
   });
 
   beforeEach(() => {
@@ -32,7 +26,7 @@ describe('Add', () => {
       Local.testAccounts[1]);
     zkAppPrivateKey = PrivateKey.random();
     zkAppAddress = zkAppPrivateKey.toPublicKey();
-    zkApp = new Add(zkAppAddress);
+    zkApp = new Core(zkAppAddress);
   });
 
   async function localDeploy() {
@@ -45,23 +39,18 @@ describe('Add', () => {
     await txn.sign([deployerKey, zkAppPrivateKey]).send();
   }
 
-  it('generates and deploys the `Add` smart contract', async () => {
-    await localDeploy();
-    const num = zkApp.num.get();
-    expect(num).toEqual(Field(1));
-  });
-
-  it('correctly updates the num state on the `Add` smart contract', async () => {
+  it('generates and deploys the `Core` smart contract', async () => {
     await localDeploy();
 
-    // update transaction
-    const txn = await Mina.transaction(senderAccount, () => {
-      zkApp.update();
-    });
-    await txn.prove();
-    await txn.sign([senderKey]).send();
+    // let rawTestString = "This is a test";
+    // let testFields = stringToFields(rawTestString);
+    // let testHash = Poseidon.hash(testFields)
 
-    const updatedNum = zkApp.num.get();
-    expect(updatedNum).toEqual(Field(3));
+    expect(zkApp.testCommmit.get()).toEqual(Field(0));
+    expect(zkApp.solutionCommit.get()).toEqual(Field(0));
+    expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
+    expect(zkApp.isVerified.get()).toEqual(Bool(false));
+
   });
+
 });
