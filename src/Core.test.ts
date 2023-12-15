@@ -15,9 +15,7 @@ describe('Core', () => {
 
   beforeAll(async () => {
     if (proofsEnabled) await Core.compile();
-  });
 
-  beforeEach(() => {
     const Local = Mina.LocalBlockchain({ proofsEnabled });
     Mina.setActiveInstance(Local);
     ({ privateKey: deployerKey, publicKey: deployerAccount } =
@@ -27,7 +25,10 @@ describe('Core', () => {
     zkAppPrivateKey = PrivateKey.random();
     zkAppAddress = zkAppPrivateKey.toPublicKey();
     zkApp = new Core(zkAppAddress);
+
+    await localDeploy();
   });
+
 
   async function localDeploy() {
     const txn = await Mina.transaction(deployerAccount, () => {
@@ -35,22 +36,33 @@ describe('Core', () => {
       zkApp.deploy();
     });
     await txn.prove();
-    // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn.sign([deployerKey, zkAppPrivateKey]).send();
   }
 
   it('generates and deploys the `Core` smart contract', async () => {
-    await localDeploy();
-
-    // let rawTestString = "This is a test";
-    // let testFields = stringToFields(rawTestString);
-    // let testHash = Poseidon.hash(testFields)
 
     expect(zkApp.testCommmit.get()).toEqual(Field(0));
     expect(zkApp.solutionCommit.get()).toEqual(Field(0));
     expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
     expect(zkApp.isVerified.get()).toEqual(Bool(false));
 
+  });
+
+  it('BUILDER publishes a unit test bounty', async () => {
+
+    let rawTestString = "This is a test";
+    let testFields = stringToFields(rawTestString);
+    let testHash = Poseidon.hash(testFields);
+
+    const txn = await Mina.transaction(senderAccount, () => {
+      zkApp.publishBounty(testHash);
+    });
+    await txn.prove();
+    await txn.sign([senderKey]).send();
+    
+    let onchainTestHash = zkApp.testCommmit.get();
+
+    expect(onchainTestHash).toEqual(testHash);
   });
 
 });

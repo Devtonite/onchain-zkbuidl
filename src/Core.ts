@@ -18,7 +18,6 @@ export class Core extends SmartContract {
 
   // method to start a new bounty
   @method publishBounty(testHash: Field) {
-
     this.testCommmit.requireEquals(Field(0));
     this.solutionCommit.requireEquals(Field(0));
     this.isBountyOpen.requireEquals(Bool(false));
@@ -26,6 +25,7 @@ export class Core extends SmartContract {
 
     let emptyTest = this.testCommmit.get();
     testHash.assertNotEquals(emptyTest)
+    
     this.testCommmit.set(testHash);
   }
 }
