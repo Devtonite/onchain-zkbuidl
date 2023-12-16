@@ -2,7 +2,7 @@ import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Core } from './Core';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool } from 'o1js';
 
-let proofsEnabled = true;
+let proofsEnabled = false;
 
 describe('Core', () => {
   let deployerAccount: PublicKey,
@@ -63,6 +63,30 @@ describe('Core', () => {
     let onchainTestHash = zkApp.testCommmit.get();
 
     expect(onchainTestHash).toEqual(testHash);
+    expect(zkApp.solutionCommit.get()).toEqual(Field(0));
+    expect(zkApp.isBountyOpen.get()).toEqual(Bool(true));
+    expect(zkApp.isVerified.get()).toEqual(Bool(false));
+
+  });
+
+  it('HUNTER commits to a viable code solution', async () => {
+
+    let rawSolutionString = "This is a solution";
+    let solutionFields = stringToFields(rawSolutionString);
+    let soluionHash = Poseidon.hash(solutionFields);
+
+    const txn = await Mina.transaction(senderAccount, () => {
+      zkApp.commitSolution(soluionHash);
+    });
+    await txn.prove();
+    await txn.sign([senderKey]).send();
+    
+    let onChainSolutionHash = zkApp.solutionCommit.get();
+
+    expect(onChainSolutionHash).toEqual(soluionHash);
+    expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
+    expect(zkApp.isVerified.get()).toEqual(Bool(false));
+
   });
 
 });

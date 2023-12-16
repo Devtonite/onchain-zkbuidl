@@ -24,8 +24,22 @@ export class Core extends SmartContract {
     this.isVerified.requireEquals(Bool(false));
 
     let emptyTest = this.testCommmit.get();
-    testHash.assertNotEquals(emptyTest)
-    
+    testHash.assertNotEquals(emptyTest);
+
     this.testCommmit.set(testHash);
+    this.isBountyOpen.set(Bool(true));
+
+  }
+
+  // method to commit to a solution hash for open bounty
+  @method commitSolution(solutionHash: Field) {
+    this.isBountyOpen.requireEquals(Bool(true));
+    this.isVerified.requireEquals(Bool(false));
+    let emptySolution = this.solutionCommit.getAndRequireEquals();
+
+    solutionHash.assertNotEquals(emptySolution);
+
+    this.solutionCommit.set(solutionHash);
+    this.isBountyOpen.set(Bool(false));
   }
 }
