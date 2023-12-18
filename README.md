@@ -30,6 +30,9 @@ Pending Features:
 - Recursive proofs implementation
 - And a lot more...
 
+## Contract Flow Diagram
+![Linear Interaction](src/flow.excalidraw.png)
+
 ## How to run tests
 
 The current tests model the interactions between Bounty Builders and Hunters using onchain methods.
