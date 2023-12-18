@@ -1,5 +1,4 @@
 import { Field, SmartContract, state, State, method, Bool, Poseidon, Provable } from 'o1js';
-import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 
 export class Core extends SmartContract {
   @state(Field) testCommmit = State<Field>();
@@ -56,13 +55,13 @@ export class Core extends SmartContract {
     this.isVerified.requireEquals(Bool(false));
     this.testCommmit.requireEquals(unitTest);
     this.solutionCommit.requireEquals(codeSolution);
+    
     this.hashOfComputation.requireEquals(Field(0));
 
     let resultHash = Poseidon.hash([this.testCommmit.get(), this.solutionCommit.get()]);
     resultHash.assertEquals(Poseidon.hash([unitTest, codeSolution]));
 
     result.assertEquals(Bool(true));
-
     this.hashOfComputation.set(hashOfComputation);
   }
   
@@ -72,12 +71,13 @@ export class Core extends SmartContract {
     this.isVerified.requireEquals(Bool(false));
     this.testCommmit.requireEquals(unitTest);
     this.solutionCommit.requireEquals(codeSolution);
-    this.hashOfComputation.get().assertNotEquals(Field(0));
+
+    this.hashOfComputation.requireEquals(hashOfComputation);
     
-    let resultHash = Poseidon.hash([this.testCommmit.get(), this.solutionCommit.get(), this.hashOfComputation.get()]);
-    resultHash.assertEquals(Poseidon.hash([unitTest, codeSolution, hashOfComputation]))
+    let resultHash = Poseidon.hash([this.testCommmit.get(), this.solutionCommit.get()]);
+    resultHash.assertEquals(Poseidon.hash([unitTest, codeSolution]));
+
     result.assertEquals(Bool(true));
-    
     this.isVerified.set(Bool(true));
   }
 
