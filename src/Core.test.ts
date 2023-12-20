@@ -7,8 +7,12 @@ let proofsEnabled = false;
 describe('Core', () => {
   let deployerAccount: PublicKey,
     deployerKey: PrivateKey,
-    senderAccount: PublicKey,
-    senderKey: PrivateKey,
+    builderAccount: PublicKey,
+    builderKey: PrivateKey,
+    hunterAccount: PublicKey,
+    hunterKey: PrivateKey,
+    verifierAccount: PublicKey,
+    verifierKey: PrivateKey,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
     zkApp: Core;
@@ -18,17 +22,21 @@ describe('Core', () => {
 
     const Local = Mina.LocalBlockchain({ proofsEnabled });
     Mina.setActiveInstance(Local);
+
     ({ privateKey: deployerKey, publicKey: deployerAccount } =
       Local.testAccounts[0]);
-    ({ privateKey: senderKey, publicKey: senderAccount } =
+    ({ privateKey: builderKey, publicKey: builderAccount } =
       Local.testAccounts[1]);
+    ({ privateKey: hunterKey, publicKey: hunterAccount } =
+      Local.testAccounts[2]);
+    ({ privateKey: verifierKey, publicKey: verifierAccount } =
+      Local.testAccounts[3]);
     zkAppPrivateKey = PrivateKey.random();
     zkAppAddress = zkAppPrivateKey.toPublicKey();
     zkApp = new Core(zkAppAddress);
 
     await localDeploy();
   });
-
 
   async function localDeploy() {
     const txn = await Mina.transaction(deployerAccount, () => {
@@ -43,6 +51,7 @@ describe('Core', () => {
 
     expect(zkApp.testCommmit.get()).toEqual(Field(0));
     expect(zkApp.solutionCommit.get()).toEqual(Field(0));
+    expect(zkApp.hashOfComputation.get()).toEqual(Field(0));
     expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
     expect(zkApp.isVerified.get()).toEqual(Bool(false));
 
@@ -56,19 +65,19 @@ describe('Core', () => {
     let testFields = stringToFields(rawTestString);
     let testHash = Poseidon.hash(testFields);
 
-    const txn = await Mina.transaction(senderAccount, () => {
+    const txn = await Mina.transaction(builderAccount, () => {
       zkApp.publishBounty(testHash);
     });
     await txn.prove();
-    await txn.sign([senderKey]).send();
+    await txn.sign([builderKey]).send();
     
-    let onchainTestHash = zkApp.testCommmit.get();
-
-    expect(onchainTestHash).toEqual(testHash);
     expect(zkApp.solutionCommit.get()).toEqual(Field(0));
-    expect(zkApp.isBountyOpen.get()).toEqual(Bool(true));
+    expect(zkApp.hashOfComputation.get()).toEqual(Field(0));
     expect(zkApp.isVerified.get()).toEqual(Bool(false));
-
+    
+    let newTestHash = zkApp.testCommmit.get();
+    expect(newTestHash).toEqual(testHash);
+    expect(zkApp.isBountyOpen.get()).toEqual(Bool(true));
   });
 
   it('HUNTER commits to a viable code solution', async () => {
@@ -77,18 +86,19 @@ describe('Core', () => {
     let solutionFields = stringToFields(rawSolutionString);
     let soluionHash = Poseidon.hash(solutionFields);
 
-    const txn = await Mina.transaction(senderAccount, () => {
+    const txn = await Mina.transaction(hunterAccount, () => {
       zkApp.commitSolution(soluionHash);
     });
     await txn.prove();
-    await txn.sign([senderKey]).send();
+    await txn.sign([hunterKey]).send();
+
+    // can't check for testCommit because unit test is still private here.
+    expect(zkApp.hashOfComputation.get()).toEqual(Field(0));
+    expect(zkApp.isVerified.get()).toEqual(Bool(false));
     
     let onChainSolutionHash = zkApp.solutionCommit.get();
-
     expect(onChainSolutionHash).toEqual(soluionHash);
     expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
-    expect(zkApp.isVerified.get()).toEqual(Bool(false));
-
   });
 
   it('HUNTER computes unit test with code solution and commits to result (after waiting period)', async () => {
@@ -110,16 +120,17 @@ describe('Core', () => {
     let result = Bool(true);
     // dummy values end. -------------------------------------------------------------------
 
-    const txn = await Mina.transaction(senderAccount, () => {
+    const txn = await Mina.transaction(hunterAccount, () => {
       zkApp.computeSolution(testHash, soluionHash, computeHash, result);
     });
     await txn.prove();
-    await txn.sign([senderKey]).send();
+    await txn.sign([hunterKey]).send();
 
-    expect(zkApp.hashOfComputation.get()).toEqual(computeHash); 
-    expect(zkApp.isVerified.get()).toEqual(Bool(false));
+    expect(zkApp.testCommmit.get()).toEqual(testHash);
+    expect(zkApp.solutionCommit.get()).toEqual(soluionHash);
     expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
-
+    
+    expect(zkApp.hashOfComputation.get()).toEqual(computeHash); 
   });
 
   // This last proof naively verifies the correct computation
@@ -143,17 +154,17 @@ describe('Core', () => {
     let result = Bool(true);
     // dummy values end. -------------------------------------------------------------------
 
-    const txn = await Mina.transaction(senderAccount, () => {
+    const txn = await Mina.transaction(verifierAccount, () => {
       zkApp.verifySolution(testHash, soluionHash, computeHash, result);
     });
     await txn.prove();
-    await txn.sign([senderKey]).send();
+    await txn.sign([verifierKey]).send();
+
+    expect(zkApp.testCommmit.get()).toEqual(testHash);
+    expect(zkApp.solutionCommit.get()).toEqual(soluionHash);
 
     expect(zkApp.hashOfComputation.get()).toEqual(computeHash); 
-    expect(zkApp.isVerified.get()).toEqual(Bool(true));
-    expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
-
-
+    expect(zkApp.isVerified.get()).toEqual(result);
   });
 
 });
