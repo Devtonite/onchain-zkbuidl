@@ -3,7 +3,7 @@ import { Core } from './Core';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool } from 'o1js';
 import { Bounty } from './BountyType';
 
-let proofsEnabled = false;
+let proofsEnabled = true;
 
 describe('Core', () => {
   let deployerAccount: PublicKey,
@@ -17,6 +17,8 @@ describe('Core', () => {
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
     zkApp: Core;
+
+  let emptyHash = Poseidon.hash(stringToFields(''));
 
   beforeAll(async () => {
     if (proofsEnabled) await Core.compile();
@@ -51,9 +53,9 @@ describe('Core', () => {
   it('generates and deploys the `Core` smart contract', async () => {
 
     let bounty = new Bounty({
-      testCommit: Field(0),
-      solutionCommit: Field(0),
-      hashOfComputation: Field(0),
+      testCommit: emptyHash,
+      solutionCommit: emptyHash,
+      hashOfComputation: emptyHash,
       isBountyOpen: Bool(false),
       isVerified: Bool(false),
     });
@@ -70,76 +72,122 @@ describe('Core', () => {
   // BUILDER submits a unit test with a token bounty
   it('BUILDER publishes a unit test bounty', async () => {
 
-    let rawTestString = "This is a test";
-    let testFields = stringToFields(rawTestString);
-    let testHash = Poseidon.hash(testFields);
+    let testHash = Poseidon.hash(stringToFields('This is a test'));
+    let irrelevantBool = Bool(false);
+
+
+    let oldStatebounty = new Bounty({
+      testCommit: testHash, // input
+      solutionCommit: emptyHash,
+      hashOfComputation: emptyHash,
+      isBountyOpen: irrelevantBool,
+      isVerified: irrelevantBool,
+    });
 
     const txn = await Mina.transaction(builderAccount, () => {
-      zkApp.publishBounty(testHash);
+      zkApp.publishBounty(oldStatebounty.testCommit);
     });
     await txn.prove();
     await txn.sign([builderKey]).send();
+
+    let newStatebounty = new Bounty({
+      testCommit: testHash,
+      solutionCommit: emptyHash,
+      hashOfComputation: emptyHash,
+      isBountyOpen: Bool(true), // modified from function
+      isVerified: Bool(false),
+    });
     
-    expect(zkApp.solutionCommit.get()).toEqual(Field(0));
-    expect(zkApp.hashOfComputation.get()).toEqual(Field(0));
-    expect(zkApp.isVerified.get()).toEqual(Bool(false));
-    
-    let newTestHash = zkApp.testCommmit.get();
-    expect(newTestHash).toEqual(testHash);
-    expect(zkApp.isBountyOpen.get()).toEqual(Bool(true));
+    expect(zkApp.testCommmit.get()).toEqual(newStatebounty.testCommit);
+    expect(zkApp.solutionCommit.get()).toEqual(newStatebounty.solutionCommit);
+    expect(zkApp.hashOfComputation.get()).toEqual(newStatebounty.hashOfComputation);
+    expect(zkApp.isBountyOpen.get()).toEqual(newStatebounty.isBountyOpen);
+    expect(zkApp.isVerified.get()).toEqual(newStatebounty.isVerified);
   });
 
   it('HUNTER commits to a viable code solution', async () => {
 
-    let rawSolutionString = "This is a solution";
-    let solutionFields = stringToFields(rawSolutionString);
-    let soluionHash = Poseidon.hash(solutionFields);
+    let soluionHash = Poseidon.hash(stringToFields('This is a solution'));
+    let irrelevantBool = Bool(false);
+    
+    let oldStatebounty = new Bounty({
+      testCommit: emptyHash,
+      solutionCommit: soluionHash, // input
+      hashOfComputation: emptyHash,
+      isBountyOpen: irrelevantBool,
+      isVerified: irrelevantBool,
+    });
+
 
     const txn = await Mina.transaction(hunterAccount, () => {
-      zkApp.commitSolution(soluionHash);
+      zkApp.commitSolution(oldStatebounty.solutionCommit);
     });
     await txn.prove();
     await txn.sign([hunterKey]).send();
 
+    let testHash = Poseidon.hash(stringToFields('This is a test')); // private to builder atm.
+
+    let newStatebounty = new Bounty({
+      testCommit: testHash,
+      solutionCommit: soluionHash,
+      hashOfComputation: emptyHash,
+      isBountyOpen: Bool(false), // modified from function
+      isVerified: Bool(false),
+    });
+
+
     // can't check for testCommit because unit test is still private here.
-    expect(zkApp.hashOfComputation.get()).toEqual(Field(0));
-    expect(zkApp.isVerified.get()).toEqual(Bool(false));
-    
-    let onChainSolutionHash = zkApp.solutionCommit.get();
-    expect(onChainSolutionHash).toEqual(soluionHash);
-    expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
+
+    expect(zkApp.testCommmit.get()).toEqual(newStatebounty.testCommit);
+    expect(zkApp.solutionCommit.get()).toEqual(newStatebounty.solutionCommit);
+    expect(zkApp.hashOfComputation.get()).toEqual(newStatebounty.hashOfComputation);
+    expect(zkApp.isBountyOpen.get()).toEqual(newStatebounty.isBountyOpen);
+    expect(zkApp.isVerified.get()).toEqual(newStatebounty.isVerified);
+
   });
 
   it('HUNTER computes unit test with code solution and commits to result (after waiting period)', async () => {
 
     //  note: these are all currently dummy values (if it wasn't already obvious). ---------
-    let rawTestString = "This is a test";
-    let testFields = stringToFields(rawTestString);
-    let testHash = Poseidon.hash(testFields);
 
-    let rawSolutionString = "This is a solution";
-    let solutionFields = stringToFields(rawSolutionString);
-    let soluionHash = Poseidon.hash(solutionFields);
-
-    let rawComputeString = `${rawTestString} + ${rawSolutionString} = the test has passed.`;
-    let computeFields = stringToFields(rawComputeString);
-    let computeHash = Poseidon.hash(computeFields);
+    let testHash = Poseidon.hash(stringToFields('This is a test')); // REVEALED to hunter
+    let soluionHash = Poseidon.hash(stringToFields('This is a solution')); // private to the hunter
+    let computeHash = Poseidon.hash(stringToFields('The solution provided has passed the unit test')); // computed and private to the hunter
 
     // since we assume the unit test + code solution pairing has passed.
     let result = Bool(true);
+
     // dummy values end. -------------------------------------------------------------------
 
+    let irrelevantBool = Bool(false);
+
+    let oldStatebounty = new Bounty({
+      testCommit: testHash, // input
+      solutionCommit: soluionHash, // input
+      hashOfComputation: computeHash, // input
+      isBountyOpen: irrelevantBool,
+      isVerified: irrelevantBool,
+    });
+
     const txn = await Mina.transaction(hunterAccount, () => {
-      zkApp.computeSolution(testHash, soluionHash, computeHash, result);
+      zkApp.computeSolution(oldStatebounty.testCommit, oldStatebounty.solutionCommit, oldStatebounty.hashOfComputation, result);
     });
     await txn.prove();
     await txn.sign([hunterKey]).send();
 
-    expect(zkApp.testCommmit.get()).toEqual(testHash);
-    expect(zkApp.solutionCommit.get()).toEqual(soluionHash);
-    expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
-    
-    expect(zkApp.hashOfComputation.get()).toEqual(computeHash); 
+    let newStatebounty = new Bounty({
+      testCommit: testHash,
+      solutionCommit: soluionHash,
+      hashOfComputation: computeHash, // modified from function
+      isBountyOpen: Bool(false), 
+      isVerified: Bool(false),
+    });
+
+    expect(zkApp.testCommmit.get()).toEqual(newStatebounty.testCommit);
+    expect(zkApp.solutionCommit.get()).toEqual(newStatebounty.solutionCommit);
+    expect(zkApp.hashOfComputation.get()).toEqual(newStatebounty.hashOfComputation);
+    expect(zkApp.isBountyOpen.get()).toEqual(newStatebounty.isBountyOpen);
+    expect(zkApp.isVerified.get()).toEqual(newStatebounty.isVerified);
   });
 
   // This last proof naively verifies the correct computation
@@ -147,33 +195,44 @@ describe('Core', () => {
   it('VERIFIER runs unit test with code solution to verify a passsing result', async () => {
 
     //  note: these are all currently dummy values (if it wasn't already obvious). ---------
-    let rawTestString = "This is a test";
-    let testFields = stringToFields(rawTestString);
-    let testHash = Poseidon.hash(testFields);
-
-    let rawSolutionString = "This is a solution";
-    let solutionFields = stringToFields(rawSolutionString);
-    let soluionHash = Poseidon.hash(solutionFields);
-
-    let rawComputeString = `${rawTestString} + ${rawSolutionString} = the test has passed.`;
-    let computeFields = stringToFields(rawComputeString);
-    let computeHash = Poseidon.hash(computeFields);
+    let testHash = Poseidon.hash(stringToFields('This is a test')); // REVEALED to hunter
+    let soluionHash = Poseidon.hash(stringToFields('This is a solution')); // REVEALED to the hunter
+    let computeHash = Poseidon.hash(stringToFields('The solution provided has passed the unit test')); // COMPUTED by verifier
 
     // since we assume the unit test + code solution pairing has passed.
     let result = Bool(true);
     // dummy values end. -------------------------------------------------------------------
 
+
+    let irrelevantBool = Bool(false);
+
+    let oldStatebounty = new Bounty({
+      testCommit: testHash, // input
+      solutionCommit: soluionHash, // input
+      hashOfComputation: computeHash, // input
+      isBountyOpen: irrelevantBool,
+      isVerified: irrelevantBool,
+    });
+
     const txn = await Mina.transaction(verifierAccount, () => {
-      zkApp.verifySolution(testHash, soluionHash, computeHash, result);
+      zkApp.verifySolution(oldStatebounty.testCommit, oldStatebounty.solutionCommit, oldStatebounty.hashOfComputation, result);
     });
     await txn.prove();
     await txn.sign([verifierKey]).send();
 
-    expect(zkApp.testCommmit.get()).toEqual(testHash);
-    expect(zkApp.solutionCommit.get()).toEqual(soluionHash);
+    let newStatebounty = new Bounty({
+      testCommit: testHash,
+      solutionCommit: soluionHash,
+      hashOfComputation: computeHash, 
+      isBountyOpen: Bool(false), 
+      isVerified: Bool(true), // modified from function
+    });
 
-    expect(zkApp.hashOfComputation.get()).toEqual(computeHash); 
-    expect(zkApp.isVerified.get()).toEqual(result);
+    expect(zkApp.testCommmit.get()).toEqual(newStatebounty.testCommit);
+    expect(zkApp.solutionCommit.get()).toEqual(newStatebounty.solutionCommit);
+    expect(zkApp.hashOfComputation.get()).toEqual(newStatebounty.hashOfComputation);
+    expect(zkApp.isBountyOpen.get()).toEqual(newStatebounty.isBountyOpen);
+    expect(zkApp.isVerified.get()).toEqual(newStatebounty.isVerified);
   });
 
 });

@@ -1,5 +1,8 @@
 import { Field, SmartContract, state, State, method, Bool, Poseidon, Provable } from 'o1js';
 import { Bounty } from './BountyType';
+import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
+
+let emptyHash = Poseidon.hash(stringToFields(''));
 
 export class Core extends SmartContract {
   @state(Field) testCommmit = State<Field>();
@@ -10,40 +13,41 @@ export class Core extends SmartContract {
 
   init() {
     super.init();
-    this.testCommmit.set(Field(0));
-    this.solutionCommit.set(Field(0));
-    this.hashOfComputation.set(Field(0));
+    this.testCommmit.set(emptyHash);
+    this.solutionCommit.set(emptyHash);
+    this.hashOfComputation.set(emptyHash);
     this.isBountyOpen.set(Bool(false));
     this.isVerified.set(Bool(false));
+
   }
 
   // method to commit to a unit test
-  @method publishBounty(testHash: Field) {
-    this.testCommmit.requireEquals(Field(0));
-    this.solutionCommit.requireEquals(Field(0));
-    this.hashOfComputation.requireEquals(Field(0));
+  @method publishBounty(test: Field) {
+    this.testCommmit.requireEquals(emptyHash);
+    this.solutionCommit.requireEquals(emptyHash);
+    this.hashOfComputation.requireEquals(emptyHash);
     this.isBountyOpen.requireEquals(Bool(false));
     this.isVerified.requireEquals(Bool(false));
 
     let emptyTest = this.testCommmit.getAndRequireEquals();
-    testHash.assertNotEquals(emptyTest);
+    test.assertNotEquals(emptyTest);
 
-    this.testCommmit.set(testHash);
+    this.testCommmit.set(test);
     this.isBountyOpen.set(Bool(true));
-
   }
 
   // method to commit to a solution for an open bounty
-  @method commitSolution(solutionHash: Field) {
-    this.solutionCommit.requireEquals(Field(0));
-    this.hashOfComputation.requireEquals(Field(0));
+  @method commitSolution(solution: Field) {
+    this.testCommmit.getAndRequireEquals();
+    this.solutionCommit.requireEquals(emptyHash);
+    this.hashOfComputation.requireEquals(emptyHash);
     this.isBountyOpen.requireEquals(Bool(true));
     this.isVerified.requireEquals(Bool(false));
 
     let emptySolution = this.solutionCommit.getAndRequireEquals();
-    solutionHash.assertNotEquals(emptySolution);
+    solution.assertNotEquals(emptySolution);
 
-    this.solutionCommit.set(solutionHash);
+    this.solutionCommit.set(solution);
     this.isBountyOpen.set(Bool(false));
   }
 
@@ -51,29 +55,23 @@ export class Core extends SmartContract {
   @method computeSolution(unitTest: Field, codeSolution: Field, hashOfComputation: Field, result: Bool) {
     this.testCommmit.requireEquals(unitTest);
     this.solutionCommit.requireEquals(codeSolution);
-    this.hashOfComputation.requireEquals(Field(0));
+    this.hashOfComputation.requireEquals(emptyHash);
     this.isBountyOpen.requireEquals(Bool(false));
     this.isVerified.requireEquals(Bool(false));
     
-    let testAndSolHash = Poseidon.hash([this.testCommmit.getAndRequireEquals(), this.solutionCommit.getAndRequireEquals()]);
-    testAndSolHash.assertEquals(Poseidon.hash([unitTest, codeSolution]));
     result.assertEquals(Bool(true));
-
     this.hashOfComputation.set(hashOfComputation);
   }
   
   // method to verify the commited computation of the commited solution against the committed unit test for 
   @method verifySolution(unitTest: Field, codeSolution: Field, hashOfComputation: Field, result: Bool) {
-    this.isBountyOpen.requireEquals(Bool(false));
-    this.isVerified.requireEquals(Bool(false));
     this.testCommmit.requireEquals(unitTest);
     this.solutionCommit.requireEquals(codeSolution);
     this.hashOfComputation.requireEquals(hashOfComputation);
+    this.isBountyOpen.requireEquals(Bool(false));
+    this.isVerified.requireEquals(Bool(false));
     
-    let testAndSolHash = Poseidon.hash([this.testCommmit.getAndRequireEquals(), this.solutionCommit.getAndRequireEquals()]);
-    testAndSolHash.assertEquals(Poseidon.hash([unitTest, codeSolution]));
     result.assertEquals(Bool(true));
-
     this.isVerified.set(Bool(true));
   }
 
