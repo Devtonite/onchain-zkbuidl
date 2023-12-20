@@ -1,4 +1,5 @@
 import { Field, SmartContract, state, State, method, Bool, Poseidon, Provable } from 'o1js';
+import { Bounty } from './BountyType';
 
 export class Core extends SmartContract {
   @state(Field) testCommmit = State<Field>();

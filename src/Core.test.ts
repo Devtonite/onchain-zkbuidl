@@ -1,6 +1,7 @@
 import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Core } from './Core';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool } from 'o1js';
+import { Bounty } from './BountyType';
 
 let proofsEnabled = false;
 
@@ -49,11 +50,19 @@ describe('Core', () => {
 
   it('generates and deploys the `Core` smart contract', async () => {
 
-    expect(zkApp.testCommmit.get()).toEqual(Field(0));
-    expect(zkApp.solutionCommit.get()).toEqual(Field(0));
-    expect(zkApp.hashOfComputation.get()).toEqual(Field(0));
-    expect(zkApp.isBountyOpen.get()).toEqual(Bool(false));
-    expect(zkApp.isVerified.get()).toEqual(Bool(false));
+    let bounty = new Bounty({
+      testCommit: Field(0),
+      solutionCommit: Field(0),
+      hashOfComputation: Field(0),
+      isBountyOpen: Bool(false),
+      isVerified: Bool(false),
+    });
+
+    expect(zkApp.testCommmit.get()).toEqual(bounty.testCommit);
+    expect(zkApp.solutionCommit.get()).toEqual(bounty.solutionCommit);
+    expect(zkApp.hashOfComputation.get()).toEqual(bounty.hashOfComputation);
+    expect(zkApp.isBountyOpen.get()).toEqual(bounty.isBountyOpen);
+    expect(zkApp.isVerified.get()).toEqual(bounty.isVerified);
 
   });
 
