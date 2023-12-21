@@ -8,6 +8,15 @@ export class Bounty extends Struct({
     isVerified: Bool,
 }){}
 
+export class FileInFields extends Struct({
+    a1: Field,
+    a2: Field,
+}){
+    static toArray(someFile: FileInFields){
+        return [someFile.a1, someFile.a2];
+    }
+}
+
 export const TestProof = ZkProgram({
     name: "generating-test-proof",
     publicInput: Field,
@@ -26,15 +35,14 @@ export const TestProof = ZkProgram({
         },
 
         recurseTest: {
-            privateInputs: [Field, SelfProof],
+            privateInputs: [FileInFields, SelfProof],
 
-            method(publicPrev: Field, fieldRemFromArray: Field, prevProof: SelfProof<Field, Field>): Field {
+            method(publicPrev: Field, fieldRemFromArray: FileInFields, prevProof: SelfProof<Field, Field>): Field {
                 prevProof.verify();
                 publicPrev.assertEquals(prevProof.publicOutput);
-                let newOutput = Poseidon.hash([publicPrev, fieldRemFromArray]);
+                let newOutput = Poseidon.hash([publicPrev, fieldRemFromArray.a1, fieldRemFromArray.a2]);
                 return newOutput;
             }
         },
     }
 });
-
