@@ -2,18 +2,25 @@ import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Core } from './Core';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, VerificationKey, SelfProof } from 'o1js';
 import { Bounty, TestProof } from './BountyType';
+import * as fs from 'fs';
+import { join } from 'path';
 
 let proofsEnabled = true;
 
-describe('TestProof', () => {
+describe('RealTestProof', () => {
   let keyForVerify: VerificationKey,
   baseProof: SelfProof<Field, Field>,
-  recursiveProof: SelfProof<Field, Field>
+  // recursiveProof: SelfProof<Field, Field>,
+  testInFields: Field[]
   ;
 
   beforeAll(async () => {
     const { verificationKey } = await TestProof.compile();
     keyForVerify = verificationKey;
+    
+    let string = fs.readFileSync('./src/exampleCoreTest.txt', 'utf-8');
+    testInFields = stringToFields(string);
+
   });
 
   it('generates and TestProof ZKProgram', async () => {
@@ -27,34 +34,16 @@ describe('TestProof', () => {
     // console.log(baseProof.toJSON());
     });
 
-  it('prove recursive case with a single testField', async () => {
-      let currentProof = baseProof;
-      let publicInput = baseProof.publicOutput;
-
-      let testFields = stringToFields('This is a test');
-      console.log(`Number of Fields from code: ${testFields.length}`);
-      
-      let value = 0;
-
-      for (let singleField of testFields) {
-          currentProof = await TestProof.recurseTest(publicInput, singleField, currentProof);
-          publicInput = currentProof.publicOutput;
-          value += 1;
-          // console.log(currentProof);
-          console.log(`Proof number: ${value}`);
-      }
-  });
-
+  // working but WAY TO COMPUTATIONALY EXPENSIVE. Todo: shorten the # of proofs
   it('prove recursive case with array of testFields', async () => {
       let currentProof = baseProof;
       let publicInput = baseProof.publicOutput;
       
-      let testFields = [Field(10), Field(20), Field(30)];
-      console.log(`Number of Fields from code: ${testFields.length}`);
+      console.log(`Number of Fields from code: ${testInFields.length}`);
       
       let value = 0;
       
-      for (let singleField of testFields) {
+      for (let singleField of testInFields) {
           currentProof = await TestProof.recurseTest(publicInput, singleField, currentProof);
           publicInput = currentProof.publicOutput;
           value += 1;
