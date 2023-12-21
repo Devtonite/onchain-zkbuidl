@@ -1,7 +1,7 @@
 import { bytesToFields, stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Core } from './Core';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, VerificationKey, SelfProof } from 'o1js';
-import { Bounty, FileInFields, TestProof } from './BountyType';
+import { Bounty, FileInFields, TestProof, arrayToFileFields } from './BountyType';
 import * as fs from 'fs';
 import { Blob } from 'buffer';
 
@@ -20,7 +20,7 @@ describe('RealTestProof', () => {
     keyForVerify = verificationKey;
     
     // let string = fs.readFileSync('./src/exampleCoreTest.txt', 'utf-8');
-    let string = 'test test test test test test test test test test';
+    let string = 'TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest';
     let stringBlob = new Blob([string], {type: 'utf-8'});
     stringInFields = stringToFields(string);
 
@@ -52,14 +52,19 @@ describe('RealTestProof', () => {
       let value = 0;
 
       // build a FileInFields struct from a Field[]
-      let oneStruct = new FileInFields({
-        a1: stringInFields[0],
-        a2: stringInFields[1]
-      })
-      currentProof = await TestProof.recurseTest(publicInput, oneStruct, currentProof);
-      publicInput = currentProof.publicOutput;
-      value += 1;
-      console.log(`Proof number: ${value}`);
+      // let oneStruct = new FileInFields({
+      //   a1: stringInFields[0],
+      //   a2: stringInFields[1]
+      // })
+
+      let files = arrayToFileFields(stringInFields);
+
+      for (let singleFile of files) {
+        currentProof = await TestProof.recurseTest(publicInput, singleFile, currentProof);
+        publicInput = currentProof.publicOutput;
+        value += 1;
+        console.log(`Proof number: ${value}`);
+      }
 
 
       // for (let singleField of testInFields) {

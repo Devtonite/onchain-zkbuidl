@@ -17,6 +17,28 @@ export class FileInFields extends Struct({
     }
 }
 
+export function arrayToFileFields(fields: Field[]): FileInFields[] {
+    let number = fields.length;
+    let array = [];
+
+    for (let i = 0; i < number; i += 2) {
+        let oneStruct: FileInFields;
+        if (i + 1 == number) {
+            oneStruct = new FileInFields({
+                a1: fields[i],
+                a2: Field(0),
+              })
+        } else {
+            oneStruct = new FileInFields({
+                a1: fields[i],
+                a2: fields[i + 1]
+              })
+        }
+        array.push(oneStruct)
+    }
+    return array;
+}
+
 export const TestProof = ZkProgram({
     name: "generating-test-proof",
     publicInput: Field,
