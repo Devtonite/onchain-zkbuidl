@@ -1,7 +1,7 @@
 import { bytesToFields, stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Core } from './Core';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, VerificationKey, SelfProof } from 'o1js';
-import { Bounty, TestProof, arrayFile3 } from './BountyType';
+import { Bounty, TestProof, arrayFile8 } from './BountyType';
 import * as fs from 'fs';
 import { Blob } from 'buffer';
 
@@ -37,7 +37,7 @@ describe('RealTestProof', () => {
       console.log(`Number of Fields from string: ${stringInFields.length}`);
 
       let value = 0;
-      let files = arrayFile3(stringInFields);
+      let files = arrayFile8(stringInFields);
 
       for (let singleFile of files) {
         currentProof = await TestProof.recurseTest(publicInput, singleFile, currentProof);
