@@ -1,7 +1,7 @@
 import { bytesToFields, stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Core } from './Core';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, VerificationKey, SelfProof } from 'o1js';
-import { Bounty, FileInFields, TestProof, arrayToFileFields } from './BountyType';
+import { Bounty, File2, TestProof, arrayFile2 } from './BountyType';
 import * as fs from 'fs';
 import { Blob } from 'buffer';
 
@@ -51,13 +51,13 @@ describe('RealTestProof', () => {
       
       let value = 0;
 
-      // build a FileInFields struct from a Field[]
-      // let oneStruct = new FileInFields({
+      // build a File2 struct from a Field[]
+      // let oneStruct = new File2({
       //   a1: stringInFields[0],
       //   a2: stringInFields[1]
       // })
 
-      let files = arrayToFileFields(stringInFields);
+      let files = arrayFile2(stringInFields);
 
       for (let singleFile of files) {
         currentProof = await TestProof.recurseTest(publicInput, singleFile, currentProof);
