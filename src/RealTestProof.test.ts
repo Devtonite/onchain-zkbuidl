@@ -1,7 +1,7 @@
 import { bytesToFields, stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Core } from './Core';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, VerificationKey, SelfProof } from 'o1js';
-import { Bounty, File2, TestProof, arrayFile2 } from './BountyType';
+import { Bounty, TestProof, arrayFile3 } from './BountyType';
 import * as fs from 'fs';
 import { Blob } from 'buffer';
 
@@ -19,8 +19,8 @@ describe('RealTestProof', () => {
     const { verificationKey } = await TestProof.compile();
     keyForVerify = verificationKey;
     
-    // let string = fs.readFileSync('./src/exampleCoreTest.txt', 'utf-8');
-    let string = 'TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest';
+    let string = fs.readFileSync('./src/exampleCoreTest.txt', 'utf-8');
+    // let string = 'TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest';
     let stringBlob = new Blob([string], {type: 'utf-8'});
     stringInFields = stringToFields(string);
 
@@ -57,7 +57,7 @@ describe('RealTestProof', () => {
       //   a2: stringInFields[1]
       // })
 
-      let files = arrayFile2(stringInFields);
+      let files = arrayFile3(stringInFields);
 
       for (let singleFile of files) {
         currentProof = await TestProof.recurseTest(publicInput, singleFile, currentProof);

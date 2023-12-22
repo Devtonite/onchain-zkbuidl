@@ -47,22 +47,19 @@ export class File3 extends Struct({
     static toArray(someFile: File3) {
         return [someFile.a1, someFile.a2, someFile.a3];
     }
-    static buildFile(someArray: Field[]) {
-
-    }
 }
 
-export function arrayFile3(fields: Field[]): File2[] {
+export function arrayFile3(fields: Field[]): File3[] {
     const fieldsPerSection = 3;
     let length = fields.length;
     let numSets = length / fieldsPerSection;
     // for now, truncate the extra fields
     let rem = length % fieldsPerSection;
-    
+
     let array = [];
 
     for (let i = 0; i < numSets; i++) {
-        let oneStruct: File2;
+        let oneStruct: File3;
 
         oneStruct = new File3({
             a1: fields[fieldsPerSection*i],
@@ -92,12 +89,12 @@ export const TestProof = ZkProgram({
         },
 
         recurseTest: {
-            privateInputs: [File2, SelfProof],
+            privateInputs: [File3, SelfProof],
 
-            method(publicPrev: Field, fieldRemFromArray: File2, prevProof: SelfProof<Field, Field>): Field {
+            method(publicPrev: Field, fieldRemFromArray: File3, prevProof: SelfProof<Field, Field>): Field {
                 prevProof.verify();
                 publicPrev.assertEquals(prevProof.publicOutput);
-                let array = File2.toArray(fieldRemFromArray);
+                let array = File3.toArray(fieldRemFromArray);
                 let arrayHash = Poseidon.hash(array);
                 let newOutput = Poseidon.hash([publicPrev, arrayHash]);
                 return newOutput;
