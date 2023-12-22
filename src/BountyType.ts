@@ -8,37 +8,6 @@ export class Bounty extends Struct({
     isVerified: Bool,
 }){}
 
-export class File2 extends Struct({
-    a1: Field,
-    a2: Field,
-}){
-    static toArray(someFile: File2){
-        return [someFile.a1, someFile.a2];
-    }
-}
-
-export function arrayFile2(fields: Field[]): File2[] {
-    let number = fields.length;
-    let array = [];
-
-    for (let i = 0; i < number; i += 2) {
-        let oneStruct: File2;
-        if (i + 1 == number) {
-            oneStruct = new File2({
-                a1: fields[i],
-                a2: Field(0),
-              })
-        } else {
-            oneStruct = new File2({
-                a1: fields[i],
-                a2: fields[i + 1]
-              })
-        }
-        array.push(oneStruct)
-    }
-    return array;
-}
-
 export class File3 extends Struct({
     a1: Field,
     a2: Field,
@@ -51,13 +20,12 @@ export class File3 extends Struct({
 
 export function arrayFile3(fields: Field[]): File3[] {
     const fieldsPerSection = 3;
-    let length = fields.length;
-    let numSets = length / fieldsPerSection;
+    let length = fields.length; 
+    let numSets = Math.floor(length / fieldsPerSection);
     // for now, truncate the extra fields
     let rem = length % fieldsPerSection;
 
     let array = [];
-
     for (let i = 0; i < numSets; i++) {
         let oneStruct: File3;
 
