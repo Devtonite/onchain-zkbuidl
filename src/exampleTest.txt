@@ -1,0 +1,20 @@
+import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
+import { Core } from './Core';
+import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool } from 'o1js';
+import { Bounty } from './BountyType';
+
+let proofsEnabled = true;
+
+describe('Core', () => {
+  let deployerAccount: PublicKey,
+    deployerKey: PrivateKey,
+    builderAccount: PublicKey,
+    builderKey: PrivateKey,
+    hunterAccount: PublicKey,
+    hunterKey: PrivateKey,
+    verifierAccount: PublicKey,
+    verifierKey: PrivateKey,
+    zkAppAddress: PublicKey,
+    zkAppPrivateKey: PrivateKey,
+    zkApp: Core;
+});
