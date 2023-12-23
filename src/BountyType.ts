@@ -3,7 +3,7 @@ import { Bool, Field, Poseidon, SelfProof, Struct, ZkProgram } from "o1js";
 export class Bounty extends Struct({
     testCommit: Field,
     solutionCommit: Field,
-    hashOfComputation: Field,
+    computationCommit: Field,
     isBountyOpen: Bool,
     isVerified: Bool,
 }){}
