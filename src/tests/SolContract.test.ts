@@ -1,6 +1,6 @@
 import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Core } from '../Core';
-import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool } from 'o1js';
+import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, UInt64 } from 'o1js';
 import { Bounty } from '../BountyType';
 import * as fs from 'fs';
 
@@ -17,7 +17,8 @@ export type publicState = {
     rawSolution: string,
 }
 
-let proofsEnabled = true;
+let proofsEnabled = false;
+let Local;
 
 describe('Solidity', () => {
     let deployer: user, 
@@ -30,9 +31,10 @@ describe('Solidity', () => {
     let defaultEmptyHash = Poseidon.hash(stringToFields(''));
     let publiclyViewableState: publicState;
 
+
     beforeAll(async () => {
-        await Core.compile();
-        const Local = Mina.LocalBlockchain({proofsEnabled});
+
+        Local = Mina.LocalBlockchain({proofsEnabled});
         Mina.setActiveInstance(Local);
 
         deployer = Local.testAccounts[0];
@@ -42,7 +44,6 @@ describe('Solidity', () => {
 
         zkAppPrivateKey = PrivateKey.random();
         zkAppAddress = zkAppPrivateKey.toPublicKey();
-        zkApp = new Core(zkAppAddress);
 
         publiclyViewableState = {
             testHash: Field(0),
@@ -50,6 +51,10 @@ describe('Solidity', () => {
             rawTest: '',
             rawSolution: '',
         }
+
+        zkApp = new Core(zkAppAddress);
+        await Core.compile();
+
     })
 
     it('DEPLOYER deploys zkApp smart contract', async () => {
@@ -75,7 +80,8 @@ describe('Solidity', () => {
         let testFileHash = getFileHash('./src/builder/bountyTest.sol.txt')
         
         const txn = await Mina.transaction(builder.publicKey, () => {
-          zkApp.publishBounty(testFileHash);
+          // create a bounty that lasts 24 hours from time of publish
+          zkApp.publishBounty(testFileHash, UInt64.from(24));
         });
         await txn.prove();
         await txn.sign([builder.privateKey]).send();
@@ -142,7 +148,7 @@ describe('Solidity', () => {
         publiclyViewableState.rawSolution = './src/hunter/bountySolution.sol.txt';
       });
 
-      it('VERIFIER runs unit test with code solution to verify the HUNTER\'s passsing result', async () => {
+      it('VERIFIER runs unit test with code solution to verify the HUNTER\'s passing result', async () => {
         let testFileHash = getFileHash(publiclyViewableState.rawTest);
         let solutionFileHash = getFileHash(publiclyViewableState.rawSolution);
         let [computation, result] = runSolutionAgainstTest();
@@ -167,7 +173,7 @@ describe('Solidity', () => {
 
 
     function expectedOnChainState(contract: Core, bounty: Bounty) {
-        expect(contract.testCommmit.get()).toEqual(bounty.testCommit);
+        expect(contract.testCommit.get()).toEqual(bounty.testCommit);
         expect(contract.solutionCommit.get()).toEqual(bounty.solutionCommit);
         expect(contract.computationCommit.get()).toEqual(bounty.computationCommit);
         expect(contract.isBountyOpen.get()).toEqual(bounty.isBountyOpen);
@@ -186,7 +192,7 @@ describe('Solidity', () => {
     }
 
     function runSolutionAgainstTest(): [string, Bool] {
-        // todo: run the foundry unit test with the commited solution
+        // todo: run the foundry unit test with the committed solution
         return ['The test ran successfully', Bool(true)];
     }
 });

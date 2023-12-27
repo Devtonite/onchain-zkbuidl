@@ -37,7 +37,7 @@ export class Core extends SmartContract {
 
     let hashOfTest = Poseidon.hash([test]);
     this.testCommit.set(hashOfTest);
-    let currentTime = this.network.timestamp.get();
+    let currentTime = this.network.timestamp.getAndRequireEquals();
     let timeTillBountyLocks = currentTime.add(bountyDurationInHours.mul(MILLISECONDS_PER_HOUR));
     this.bountyOpenTill.set(timeTillBountyLocks);
     this.isBountyOpen.set(Bool(true));
@@ -53,7 +53,7 @@ export class Core extends SmartContract {
     this.isVerified.requireEquals(Bool(false));
 
     let timeTillBountyLocks = this.bountyOpenTill.getAndRequireEquals();
-    let submissionTime = this.network.timestamp.get();
+    let submissionTime = this.network.timestamp.getAndRequireEquals();
     submissionTime.assertLessThanOrEqual(timeTillBountyLocks);
 
     let emptySolution = this.solutionCommit.getAndRequireEquals();
