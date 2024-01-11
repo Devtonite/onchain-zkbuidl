@@ -2,7 +2,6 @@ import { Field, SmartContract, state, State, method, Bool, Poseidon, UInt32, UIn
 import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 
 let emptyHash = Poseidon.hash(stringToFields(''));
-const MILLISECONDS_PER_HOUR: UInt64 = UInt64.from(1000*60*60);
 
 export class Core extends SmartContract {
   @state(Field) testCommit = State<Field>();
@@ -24,7 +23,7 @@ export class Core extends SmartContract {
   }
 
   // method to commit to a unit test 
-  @method publishBounty(test: Field, bountyDurationInHours: UInt64) {
+  @method publishBounty(test: Field, durationINmilliSeconds: UInt64) {
     this.testCommit.requireEquals(emptyHash);
     this.solutionCommit.requireEquals(emptyHash);
     this.computationCommit.requireEquals(emptyHash);
@@ -38,10 +37,9 @@ export class Core extends SmartContract {
     let hashOfTest = Poseidon.hash([test]);
     this.testCommit.set(hashOfTest);
     let currentTime = this.network.timestamp.getAndRequireEquals();
-    let timeTillBountyLocks = currentTime.add(bountyDurationInHours.mul(MILLISECONDS_PER_HOUR));
+    let timeTillBountyLocks = currentTime.add(durationINmilliSeconds);
     this.bountyOpenTill.set(timeTillBountyLocks);
     this.isBountyOpen.set(Bool(true));
-    
   }
 
   // method to commit to a solution for an open bounty
