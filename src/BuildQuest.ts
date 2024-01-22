@@ -74,3 +74,28 @@ export const SetTokenAmountCircuit = ZkProgram({
 export class SetTokenAmountCircuitProof extends ZkProgram.Proof(
     SetTokenAmountCircuit
 ){}
+
+
+function setBountyDuration(duration: UInt64, prevProof: SetTokenAmountCircuitProof ): BountyQuest {
+    prevProof.verify();
+    prevProof.publicOutput.bountyDuration.assertEquals(UInt64.from(0));
+
+    duration.assertGreaterThanOrEqual(UInt64.from(1));
+    let updatedQuest = prevProof.publicOutput;
+    updatedQuest.bountyDuration = duration;
+    return updatedQuest;
+}
+export const SetBountyDurationCircuit = ZkProgram({
+    name: "set token amount for bounty",
+    publicOutput: BountyQuest,
+
+    methods: {
+        setBountyDuration: {
+            privateInputs: [UInt64, SetTokenAmountCircuitProof],
+            method: setBountyDuration,
+        },
+    },
+});
+export class SetBountyDurationCircuitProof extends ZkProgram.Proof(
+    SetBountyDurationCircuit
+){}
