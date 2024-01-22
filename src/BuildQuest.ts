@@ -50,3 +50,27 @@ export const VerifyTestHashCircuit = ZkProgram({
 export class VerifyTestHashCircuitProof extends ZkProgram.Proof(
     VerifyTestHashCircuit
 ){}
+
+
+function setTokenAmount(tokenAmount: UInt64, prevProof: VerifyTestHashCircuitProof ): BountyQuest {
+    prevProof.verify();
+    prevProof.publicOutput.tokenRewardAmount.assertEquals(UInt64.from(0));
+    tokenAmount.assertGreaterThanOrEqual(UInt64.from(100));
+    let updatedQuest = prevProof.publicOutput;
+    updatedQuest.tokenRewardAmount = tokenAmount;
+    return updatedQuest;
+}
+export const SetTokenAmountCircuit = ZkProgram({
+    name: "set token amount for bounty",
+    publicOutput: BountyQuest,
+
+    methods: {
+        addTestHash: {
+            privateInputs: [UInt64, VerifyTestHashCircuitProof],
+            method: setTokenAmount,
+        },
+    },
+});
+export class SetTokenAmountCircuitProof extends ZkProgram.Proof(
+    SetTokenAmountCircuit
+){}
