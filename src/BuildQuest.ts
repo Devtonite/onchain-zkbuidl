@@ -7,50 +7,46 @@ export class BountyQuest extends Struct({
     bountyDuration: UInt64,
 }){}
 
+
 function verifyBuilder(quest: BountyQuest, privK: PrivateKey): BountyQuest {
     let pubK = privK.toPublicKey();
     pubK.assertEquals(quest.builderID);
     return quest;
 }
-
 export const VerifyBuilderIDCircuit = ZkProgram({
     name: "verify builder id",
     publicInput: BountyQuest,
     publicOutput: BountyQuest,
 
     methods: {
-
         createNewBounty: {
             privateInputs: [PrivateKey],
             method: verifyBuilder,
         },
     },
 });
-
 export class VerifyBuilderIDCircuitProof extends ZkProgram.Proof(
     VerifyBuilderIDCircuit
 ){}
 
-function verifyTestHash(quest: BountyQuest, rawTestHash: Field ): BountyQuest {
-    let questTestHash = Poseidon.hash([rawTestHash]);
-    questTestHash.assertEquals(quest.testHash);
-    return quest;
-}
 
+function verifyTestHash(rawTestHash: Field, prevProof: VerifyBuilderIDCircuitProof ): BountyQuest {
+    prevProof.verify();
+    let questTestHash = Poseidon.hash([rawTestHash]);
+    questTestHash.assertEquals(prevProof.publicOutput.testHash);
+    return prevProof.publicOutput;
+}
 export const VerifyTestHashCircuit = ZkProgram({
-    name: "add test hash",
-    publicInput: BountyQuest,
+    name: "verify test hash",
     publicOutput: BountyQuest,
 
     methods: {
-
         addTestHash: {
-            privateInputs: [Field],
+            privateInputs: [Field, VerifyBuilderIDCircuitProof],
             method: verifyTestHash,
         },
     },
 });
-
 export class VerifyTestHashCircuitProof extends ZkProgram.Proof(
     VerifyTestHashCircuit
 ){}
