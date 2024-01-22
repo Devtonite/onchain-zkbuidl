@@ -65,7 +65,7 @@ export const SetTokenAmountCircuit = ZkProgram({
     publicOutput: BountyQuest,
 
     methods: {
-        addTestHash: {
+        setTokenAmount: {
             privateInputs: [UInt64, VerifyTestHashCircuitProof],
             method: setTokenAmount,
         },
