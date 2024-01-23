@@ -2,6 +2,7 @@ import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
 import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, UInt64 } from 'o1js';
 import { Core } from './Core';
 import { BountyQuest } from './builder/BuildQuest';
+import { BountyKey } from './hunter/CommitKey';
 
 let proofsEnabled = false;
 let Local;
@@ -38,14 +39,13 @@ describe('On Chain Testing', () => {
 
         console.log(Mina.getBalance(builder.publicKey).toJSON())
         console.log(Mina.getBalance(zkAppAddress).toJSON())
-
         
         let rawTestHash = Poseidon.hash(stringToFields('This is a test.'))
         let initBountyQuest = new BountyQuest({
             builderID: builder.publicKey,
             testHash: Poseidon.hash([rawTestHash]),
             tokenRewardAmount: UInt64.from(578643),
-            bountyDuration: UInt64.from(1000)
+            bountyDuration: UInt64.from(0)
         })
         
         const txn = await Mina.transaction(builder.publicKey, () => {
@@ -56,6 +56,29 @@ describe('On Chain Testing', () => {
 
         console.log(Mina.getBalance(builder.publicKey).toJSON())
         console.log(Mina.getBalance(zkAppAddress).toJSON())
+
+    });
+
+    it('commits to a bounty solution', async () => {
+
+        console.log(Mina.getBalance(builder.publicKey).toJSON())
+        console.log(Mina.getBalance(zkAppAddress).toJSON())
+
+        let rawSolutionHash = Poseidon.hash(stringToFields('This is a solution.'))
+        let bountyKeyCommit = new BountyKey({
+            hunterID: hunter.publicKey,
+            solutionHash: Poseidon.hash([rawSolutionHash])
+        })
+        
+        const txn = await Mina.transaction(hunter.publicKey, () => {
+            zkApp.commitBountyKey(bountyKeyCommit);
+        });
+        await txn.prove();
+        await txn.sign([hunter.privateKey]).send();
+
+        console.log(Mina.getBalance(hunter.publicKey).toJSON())
+        console.log(Mina.getBalance(zkAppAddress).toJSON())
+        console.log(Mina.activeInstance.currentSlot().toJSON())        
 
     });
 
