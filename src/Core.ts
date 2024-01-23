@@ -1,22 +1,26 @@
-import { Field, SmartContract, state, State, method, Bool, Poseidon, UInt32, UInt64 } from 'o1js';
-import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
-
-let emptyHash = Poseidon.hash(stringToFields(''));
-const MILLISECONDS_PER_HOUR: UInt64 = UInt64.from(1000*60*60);
+import { Field, SmartContract, state, State, method, Bool, Poseidon, UInt32, UInt64, PrivateKey, AccountUpdate } from 'o1js';
+import { BountyQuest } from './builder/BuildQuest';
 
 export class Core extends SmartContract {
 
-  @state(Field) openBountyQuest = State<Field>();
+  @state(BountyQuest) openBountyQuest = State<BountyQuest>();
   @state(Field) merkledBountyKeys = State<Field>();
 
   init() {
     super.init();
-    this.openBountyQuest.set(Field(0));
     this.merkledBountyKeys.set(Field(0));
 
   }
 
-  @method publishBountyQuest(test: Field) {
+  @method publishBountyQuest(quest: BountyQuest) {    
+    let allAccountUpdates = AccountUpdate.create(this.sender)
+    let balance = allAccountUpdates.account.balance.getAndRequireEquals();
+    let questTokenReward = quest.tokenRewardAmount;
+    balance.assertGreaterThanOrEqual(questTokenReward)
+    allAccountUpdates.send({to: this.address, amount: questTokenReward})
+    allAccountUpdates.requireSignature();
+    this.openBountyQuest.set(quest);
+
   }
 
   @method commitBountyKey(solution: Field) {
