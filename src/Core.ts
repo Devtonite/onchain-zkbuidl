@@ -17,8 +17,8 @@ export class Core extends SmartContract {
     let balance = allAccountUpdates.account.balance.getAndRequireEquals();
     let questTokenReward = quest.tokenRewardAmount;
     balance.assertGreaterThanOrEqual(questTokenReward)
-    allAccountUpdates.send({to: this.address, amount: questTokenReward})
     allAccountUpdates.requireSignature();
+    allAccountUpdates.send({to: this.address, amount: questTokenReward})
 
     let duration = quest.bountyDuration;
     let now = this.network.timestamp.getAndRequireEquals();

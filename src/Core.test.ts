@@ -1,15 +1,15 @@
 import { stringToFields } from 'o1js/dist/node/bindings/lib/encoding';
-import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, UInt64 } from 'o1js';
+import { Field, Mina, PrivateKey, PublicKey, AccountUpdate, Poseidon, Bool, UInt64, UInt32 } from 'o1js';
 import { Core } from './Core';
 import { BountyQuest } from './builder/BuildQuest';
 import { BountyKey } from './hunter/CommitKey';
 
 let proofsEnabled = false;
-let Local;
+let Local = Mina.LocalBlockchain({proofsEnabled});
+
 
 describe('On Chain Testing', () => {
     
-    Local = Mina.LocalBlockchain({proofsEnabled});
     Mina.setActiveInstance(Local);
 
     let deployer = Local.testAccounts[0];
@@ -61,8 +61,11 @@ describe('On Chain Testing', () => {
 
     it('commits to a bounty solution', async () => {
 
-        console.log(Mina.getBalance(builder.publicKey).toJSON())
-        console.log(Mina.getBalance(zkAppAddress).toJSON())
+        // console.log(Mina.getBalance(builder.publicKey).toJSON())
+        // console.log(Mina.getBalance(zkAppAddress).toJSON())
+
+        console.log(globalSlotToTimestamp1().toJSON())
+        console.log(globalSlotToTimestamp2().toJSON())
 
         let rawSolutionHash = Poseidon.hash(stringToFields('This is a solution.'))
         let bountyKeyCommit = new BountyKey({
@@ -76,10 +79,25 @@ describe('On Chain Testing', () => {
         await txn.prove();
         await txn.sign([hunter.privateKey]).send();
 
-        console.log(Mina.getBalance(hunter.publicKey).toJSON())
-        console.log(Mina.getBalance(zkAppAddress).toJSON())
-        console.log(Mina.activeInstance.currentSlot().toJSON())        
+        // console.log(Mina.getBalance(hunter.publicKey).toJSON())
+        // console.log(Mina.getBalance(zkAppAddress).toJSON())
+
+        console.log(globalSlotToTimestamp1().toJSON())
+        console.log(globalSlotToTimestamp2().toJSON())
+
 
     });
 
 });
+
+function globalSlotToTimestamp1() {
+    let { genesisTimestamp, slotTime } = Mina.activeInstance.getNetworkConstants();
+    let slot = Mina.activeInstance.getNetworkState().globalSlotSinceGenesis;
+    return UInt64.from(slot).mul(slotTime).add(genesisTimestamp)
+  }
+
+function globalSlotToTimestamp2() {
+    let { genesisTimestamp, slotTime } = Mina.activeInstance.getNetworkConstants();
+    let slot = Mina.activeInstance.currentSlot();
+    return UInt64.from(slot).mul(slotTime).add(genesisTimestamp);
+  }
