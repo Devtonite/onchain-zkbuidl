@@ -29,24 +29,24 @@ export class Core extends SmartContract {
     this.openBountyQuest.set(quest);
   }
 
-  // @method commitBountyKey(solution: BountyKey) {
-  //   let openBounty = this.openBountyQuest.getAndRequireEquals();
-  //   let now = this.network.timestamp.getAndRequireEquals();
-  //   now.assertLessThanOrEqual(openBounty.bountyDuration);
-  //   this.merkledBountyKeys.set(solution)
+  @method commitBountyKey(solution: BountyKey) {
+    let openBounty = this.openBountyQuest.getAndRequireEquals();
+    let now = this.network.timestamp.getAndRequireEquals();
+    openBounty.bountyDuration.assertGreaterThanOrEqual(now);
+    this.merkledBountyKeys.set(solution)
 
-  // }
+  }
   
-  // @method rewardWinner(test: Field, solution: Field, computation: Field, result: Bool) {
-  //   let onStateQuest = this.openBountyQuest.getAndRequireEquals();
-  //   onStateQuest.testHash.assertEquals(Poseidon.hash([test]));
-  //   let onStateKey = this.merkledBountyKeys.getAndRequireEquals();
-  //   onStateKey.solutionHash.assertEquals(Poseidon.hash([solution]));
-  //   // trust assumption: if caller of this function received the test and solution, their computation and result is honest and accurate.
-  //   result.assertEquals(Bool(true));
+  @method rewardWinner(test: Field, solution: Field, computation: Field, result: Bool) {
+    let onStateQuest = this.openBountyQuest.getAndRequireEquals();
+    onStateQuest.testHash.assertEquals(Poseidon.hash([test]));
+    let onStateKey = this.merkledBountyKeys.getAndRequireEquals();
+    onStateKey.solutionHash.assertEquals(Poseidon.hash([solution]));
+    // trust assumption: if caller of this function received the test and solution, their computation and result is honest and accurate.
+    result.assertEquals(Bool(true));
 
-  //   // this.verifiableComputation.set(solution);
-  //   this.send({to: onStateKey.hunterID, amount: onStateQuest.tokenRewardAmount})
-  // }
+    // this.verifiableComputation.set(solution);
+    this.send({to: onStateKey.hunterID, amount: onStateQuest.tokenRewardAmount})
+  }
 
 }

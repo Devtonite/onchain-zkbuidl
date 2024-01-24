@@ -58,45 +58,45 @@ describe('On Chain Testing', () => {
 
     });
 
-    // it('commits to a bounty solution', async () => {
+    it('commits to a bounty solution', async () => {
 
-    //     console.log('Hunter commits to a solution')
+        console.log('Hunter commits to a solution')
 
-    //     let rawSolutionHash = Poseidon.hash(stringToFields('This is a solution.'))
-    //     let bountyKeyCommit = new BountyKey({
-    //         hunterID: hunter.publicKey,
-    //         solutionHash: Poseidon.hash([rawSolutionHash])
-    //     })
+        let rawSolutionHash = Poseidon.hash(stringToFields('This is a solution.'))
+        let bountyKeyCommit = new BountyKey({
+            hunterID: hunter.publicKey,
+            solutionHash: Poseidon.hash([rawSolutionHash])
+        })
         
-    //     const txn = await Mina.transaction(hunter.publicKey, () => {
-    //         zkApp.commitBountyKey(bountyKeyCommit);
-    //     });
-    //     await txn.prove();
-    //     await txn.sign([hunter.privateKey]).send();
+        const txn = await Mina.transaction(hunter.publicKey, () => {
+            zkApp.commitBountyKey(bountyKeyCommit);
+        });
+        await txn.prove();
+        await txn.sign([hunter.privateKey]).send();
 
-    // });
+    });
 
-    // it('rewards valid bounty solution', async () => {
+    it('rewards valid bounty solution', async () => {
 
-    //     console.log('Verifier validates solution from hunter and releases reward')
+        console.log('Verifier validates solution from hunter and releases reward')
 
 
-    //     printAllBalances();
+        printAllBalances();
 
-    //     let rawTestHash = Poseidon.hash(stringToFields('This is a test.'))
-    //     let rawSolutionHash = Poseidon.hash(stringToFields('This is a solution.'))
-    //     let computationHash = Poseidon.hash(stringToFields('Result from computing solution with test.'))
-    //     let didTestPass = Bool(true);
+        let rawTestHash = Poseidon.hash(stringToFields('This is a test.'))
+        let rawSolutionHash = Poseidon.hash(stringToFields('This is a solution.'))
+        let computationHash = Poseidon.hash(stringToFields('Result from computing solution with test.'))
+        let testResult = Bool(true);
 
-    //     const txn = await Mina.transaction(verifier.publicKey, () => {
-    //         zkApp.rewardWinner(rawTestHash, rawSolutionHash, computationHash, didTestPass );
-    //     });
-    //     await txn.prove();
-    //     await txn.sign([verifier.privateKey]).send();
+        const txn = await Mina.transaction(verifier.publicKey, () => {
+            zkApp.rewardWinner(rawTestHash, rawSolutionHash, computationHash, testResult );
+        });
+        await txn.prove();
+        await txn.sign([verifier.privateKey]).send();
 
-    //     printAllBalances();
+        printAllBalances();
 
-    // });
+    });
 
 
     // HELPER TESTING FUNCTIONS
